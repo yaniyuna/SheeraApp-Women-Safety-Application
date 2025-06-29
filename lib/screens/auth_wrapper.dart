@@ -5,6 +5,7 @@ import 'package:sheera/pages/login/login_page.dart';
 import 'package:sheera/pages/user/mainMenu/main_page.dart';
 import 'package:sheera/providers/auth_provider.dart';
 
+
 class AuthWrapper extends StatelessWidget {
   const AuthWrapper({super.key});
 
@@ -28,7 +29,7 @@ class AuthWrapper extends StatelessWidget {
     } 
     
     if (authProvider.isAuthenticated) {
-      // Jika login berhasil, tampilkan MainPage (yang berisi TabBar dan Beranda)
+      // Jika login berhasil, tampilkan MainPage
       return const MainPage();
     } else {
       // Jika tidak, tampilkan halaman login

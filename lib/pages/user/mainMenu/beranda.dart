@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart'; // <-- 1. Tambahkan import ini
-import 'package:sheera/providers/auth_provider.dart'; // <-- 2. Tambahkan import ini (ganti 'sheera' jika perlu)
+import 'package:provider/provider.dart'; 
+import 'package:sheera/providers/auth_provider.dart'; 
 import '../../../widgets/carouselnews.dart';
 import '../../../widgets/learnmore.dart';
 import '../../../widgets/listmenu.dart';
-//import 'package:sheera/widgets/quickmenu.dart'; // Ganti "your_project" dengan nama proyek Anda
+ 
 
 class Beranda extends StatefulWidget {
   //const Beranda({super.key});
@@ -15,7 +15,6 @@ class Beranda extends StatefulWidget {
 class _BerandaState extends State<Beranda> {
   @override
   Widget build(BuildContext context) {
-    // 3. Ambil data user yang sedang login dari AuthProvider
     final authProvider = Provider.of<AuthProvider>(context);
     final user = authProvider.user;
 
@@ -47,13 +46,11 @@ class _BerandaState extends State<Beranda> {
         child: ListView(
           children: <Widget>[
             UserAccountsDrawerHeader(
-              // 4. Gunakan data user yang dinamis
               accountName: Text(user?['nama_lengkap'] ?? 'Nama Pengguna'),
               accountEmail: Text(user?['email'] ?? 'email@pengguna.com'),
               currentAccountPicture: GestureDetector(
                 onTap: () {},
                 child: CircleAvatar(
-                  // Ganti dengan gambar profil dari user jika ada, atau gunakan default
                   backgroundColor: Colors.white,
                   child: Text(
                     user?['nama_lengkap']?.substring(0, 1) ?? 'P', // Ambil huruf pertama dari nama
@@ -75,7 +72,6 @@ class _BerandaState extends State<Beranda> {
               title: Text('Setting'),
               trailing: Icon(Icons.settings),
             ),
-            // 5. Tambahkan Divider dan Tombol Logout di sini
             const Divider(), // Garis pemisah
             ListTile(
               leading: Icon(Icons.logout, color: Colors.red),

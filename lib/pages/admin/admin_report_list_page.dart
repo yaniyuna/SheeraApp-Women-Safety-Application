@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+//import 'package:sheera/models/laporan.dart';
 import 'package:sheera/pages/admin/admin_report_detail_page.dart';
 import 'package:sheera/providers/auth_provider.dart';
 import 'package:sheera/services/api_services.dart';
@@ -16,8 +17,7 @@ class AdminReportListPage extends StatefulWidget {
 class _AdminReportListPageState extends State<AdminReportListPage> {
   final ApiServices _apiService = ApiServices();
   final ScrollController _scrollController = ScrollController();
-  
-  // --- State yang dibutuhkan (diadaptasi dari Reportpage) ---
+
   List<dynamic> _laporanList = [];
   bool _isLoading = true;
   bool _isFetchingMore = false;
@@ -28,7 +28,7 @@ class _AdminReportListPageState extends State<AdminReportListPage> {
   Timer? _debounce;
   final _searchController = TextEditingController();
   int? _selectedStatusId;
-  
+
   // Opsi dropdown untuk admin
   final Map<String, int?> _statusOptions = {
     'Semua Status': null,
@@ -85,8 +85,6 @@ class _AdminReportListPageState extends State<AdminReportListPage> {
     }
 
     try {
-      // Panggil method getLaporan dari ApiService (bukan getMyReports)
-      // Karena API sudah pintar membedakan admin vs user
       final response = await _apiService.getLaporan(
         authProvider.token!,
         page: _currentPage,
@@ -134,10 +132,8 @@ class _AdminReportListPageState extends State<AdminReportListPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Kita tidak perlu AppBar di sini karena sudah ada di AdminHomePage
       body: Column(
         children: [
-          // --- UI UNTUK SEARCH DAN FILTER ---
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Row(
@@ -182,7 +178,6 @@ class _AdminReportListPageState extends State<AdminReportListPage> {
             ),
           ),
           
-          // --- KONTEN UTAMA (LIST LAPORAN) ---
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())

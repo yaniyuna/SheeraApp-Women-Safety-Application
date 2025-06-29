@@ -8,22 +8,18 @@ class AdminProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Ambil data user yang sedang login dari AuthProvider
-    // Kita gunakan watch agar UI ikut update jika ada perubahan di masa depan
     final authProvider = context.watch<AuthProvider>();
     final user = authProvider.user;
 
-    // Tampilan jika karena suatu hal data user tidak ada
     if (user == null) {
       return const Center(child: Text('Data admin tidak ditemukan.'));
     }
 
     return Scaffold(
-      // Kita tidak perlu AppBar di sini karena sudah ada di AdminHomePage
       backgroundColor: Colors.grey[100],
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
-          // Bagian Header Profil
           Card(
             elevation: 4,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
@@ -122,7 +118,7 @@ class AdminProfilePage extends StatelessWidget {
     );
   }
 
-  // Helper widget untuk membuat ListTile yang rapi
+  // Helper widget untuk membuat ListTile rapi
   Widget _buildInfoTile({required IconData icon, required String title, required String subtitle}) {
     return ListTile(
       leading: Icon(icon, color: Colors.grey[600]),

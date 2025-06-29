@@ -1,13 +1,9 @@
-// lib/pages/user/community_alert_page.dart
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:sheera/pages/user/subMenu/report_detail_page.dart';
 import 'package:sheera/providers/auth_provider.dart';
 import 'package:sheera/services/api_services.dart';
-
-
 
 class CommunityAlertPage extends StatefulWidget {
   const CommunityAlertPage({super.key});
@@ -20,15 +16,13 @@ class _CommunityAlertPageState extends State<CommunityAlertPage> {
   final ApiServices _apiService = ApiServices();
   List<dynamic> _alertList = [];
   bool _isLoading = true;
-  // State untuk pagination juga bisa ditambahkan di sini jika diperlukan
-
+  
   @override
   void initState() {
     super.initState();
     _fetchDataForRole();
   }
 
-  // Fungsi ini akan menjadi "otak" yang memilih data mana yang harus diambil
   Future<void> _fetchDataForRole() async {
     setState(() { _isLoading = true; });
 
@@ -55,7 +49,7 @@ class _CommunityAlertPageState extends State<CommunityAlertPage> {
         });
       }
     } catch (e) {
-      // ... (penanganan error Anda)
+      // ... (penanganan error)
        if (mounted) {
         setState(() { _isLoading = false; });
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));

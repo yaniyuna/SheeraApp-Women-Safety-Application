@@ -6,10 +6,7 @@ import 'package:sheera/providers/auth_provider.dart';
 import 'package:sheera/services/api_services.dart';
 
 class ContactFormPage extends StatefulWidget {
-  // 1. Tambahkan properti opsional untuk menampung data kontak yang akan diedit
   final Map<String, dynamic>? contact;
-
-  // 2. Modifikasi constructor agar bisa menerima data kontak
   const ContactFormPage({super.key, this.contact});
 
   @override
@@ -23,13 +20,11 @@ class _ContactFormPageState extends State<ContactFormPage> {
   final _apiService = ApiServices();
   bool _isLoading = false;
 
-  // 3. Buat getter untuk mengecek apakah kita sedang dalam mode edit
   bool get _isEditing => widget.contact != null;
 
   @override
   void initState() {
     super.initState();
-    // 4. Jika dalam mode edit, isi form dengan data yang sudah ada
     if (_isEditing) {
       _nameController.text = widget.contact!['nama_kontak'];
       _phoneController.text = widget.contact!['nomor_telepon'];
@@ -47,16 +42,14 @@ class _ContactFormPageState extends State<ContactFormPage> {
       try {
         // Cek mode halaman
         if (_isEditing) {
-          // --- LOGIKA UNTUK UPDATE ---
           await _apiService.updateKontak(
-            id: widget.contact!['id'], // Kirim ID kontak
+            id: widget.contact!['id'], 
             namaKontak: _nameController.text,
             nomorTelepon: _phoneController.text,
             token: authProvider.token!,
           );
           successMessage = 'Kontak berhasil diperbarui!';
         } else {
-          // --- LOGIKA UNTUK CREATE ---
           await _apiService.addKontak(
             namaKontak: _nameController.text,
             nomorTelepon: _phoneController.text,
@@ -68,7 +61,7 @@ class _ContactFormPageState extends State<ContactFormPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(successMessage), backgroundColor: Colors.green),
         );
-        Navigator.of(context).pop(true); // Kirim 'true' untuk sinyal refresh
+        Navigator.of(context).pop(true);
 
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -90,7 +83,6 @@ class _ContactFormPageState extends State<ContactFormPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // 6. Buat judul AppBar dinamis
       appBar: AppBar(
         title: Text(_isEditing ? 'Edit Kontak Darurat' : 'Tambah Kontak Darurat'),
       ),
@@ -101,7 +93,6 @@ class _ContactFormPageState extends State<ContactFormPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // ... (UI TextFormField Anda yang sudah ada, tidak perlu diubah) ...
                TextFormField(
                 controller: _nameController,
                 decoration: const InputDecoration(labelText: 'Nama Kontak', border: OutlineInputBorder()),
@@ -123,7 +114,6 @@ class _ContactFormPageState extends State<ContactFormPage> {
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
-                // 7. Buat teks tombol dinamis
                 child: _isLoading
                     ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: Colors.white))
                     : Text(_isEditing ? 'Update Kontak' : 'Simpan Kontak', style: const TextStyle(fontSize: 18)),

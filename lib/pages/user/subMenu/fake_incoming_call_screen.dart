@@ -1,12 +1,8 @@
-// lib/screens/fake_call/fake_incoming_call_screen.dart
-
 import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_ringtone_player/flutter_ringtone_player.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:sheera/pages/user/subMenu/active_call_screen.dart';
-
 
 class FakeIncomingCallScreen extends StatefulWidget {
   final String callerName;
@@ -42,7 +38,7 @@ class _FakeIncomingCallScreenState extends State<FakeIncomingCallScreen> {
 
   @override
   void dispose() {
-    // SANGAT PENTING: Hentikan nada dering saat halaman ditutup
+    // Hentikan nada dering saat halaman ditutup
     FlutterRingtonePlayer().stop();
     super.dispose();
   }
@@ -52,26 +48,25 @@ class _FakeIncomingCallScreenState extends State<FakeIncomingCallScreen> {
       String fullAudioUrl = 'http://192.168.43.45:8000${widget.audioUrl}';
       print('Playing audio from: $fullAudioUrl');
 
-      // Gunakan setUrl, bukan setAsset
       await _audioPlayer.setUrl(fullAudioUrl);
       await _audioPlayer.play();
     } catch (e) {
       print("Error playing audio from URL: $e");
     }
   }
-  // Kode BARU
-void _acceptCall() {
-  // 1. Hentikan nada dering
-  FlutterRingtonePlayer().stop();
-  Navigator.of(context).pushReplacement(
-    MaterialPageRoute(
-      builder: (context) => ActiveCallScreen(
-        callerName: widget.callerName,
-        audioUrl: widget.audioUrl, // <-- Kirim URL audio ke halaman berikutnya
+  
+  void _acceptCall() {
+    // Hentikan nada dering
+    FlutterRingtonePlayer().stop();
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (context) => ActiveCallScreen(
+          callerName: widget.callerName,
+          audioUrl: widget.audioUrl, 
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   void _declineCall() {
     FlutterRingtonePlayer().stop();
@@ -96,7 +91,7 @@ void _acceptCall() {
             ),
           ),
           
-          // 2. Konten Panggilan
+          //Konten Panggilan
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(24.0),

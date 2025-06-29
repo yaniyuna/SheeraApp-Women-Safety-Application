@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sheera/pages/user/form/report_form_page.dart';
 import 'package:sheera/providers/auth_provider.dart';
-import 'package:sheera/services/api_services.dart';
+import 'package:sheera/services/sync_service.dart';
+import 'package:sheera/helpers/dbhelper.dart';
+import 'package:sheera/models/laporan.dart';
 
 class Reportpage extends StatefulWidget {
   const Reportpage({super.key});
@@ -13,26 +15,20 @@ class Reportpage extends StatefulWidget {
 }
 
 class _ReportpageState extends State<Reportpage> {
-  final ApiServices _apiService = ApiServices();
-  final ScrollController _scrollController = ScrollController();
-  
-  // State untuk data dan UI
-  List<dynamic> _laporanList = [];
-  bool _isLoading = true;
-  bool _isFetchingMore = false;
-  
-  // State untuk pagination
-  int _currentPage = 1;
-  int _lastPage = 1;
+  final DatabaseHelper _dbHelper = DatabaseHelper();
+  final SyncService _syncService = SyncService();
 
-  // State untuk filter dan search
+  List<Laporan> _laporanList = [];
+  bool _isLoading = true;
+
   Timer? _debounce;
   final _searchController = TextEditingController();
+
+  String _searchQuery = '';
   int? _selectedStatusId;
-  
-  // Data dummy untuk dropdown status
+
   final Map<String, int> _statusOptions = {
-    'Semua Status': 0, // Kita gunakan 0 atau null untuk "semua"
+    'Semua Status': 0,
     'Baru': 1,
     'Diverifikasi': 2,
     'Ditindaklanjuti': 3,
@@ -42,96 +38,67 @@ class _ReportpageState extends State<Reportpage> {
   @override
   void initState() {
     super.initState();
-    _fetchLaporan();
-
-    // Listener untuk search
+    _refreshData();
     _searchController.addListener(_onSearchChanged);
-
-    // Listener untuk pagination scroll
-    _scrollController.addListener(() {
-      if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200 &&
-          !_isFetchingMore && _currentPage < _lastPage) {
-        _fetchLaporan(loadMore: true);
-      }
-    });
   }
 
   @override
   void dispose() {
-    _scrollController.dispose();
     _searchController.dispose();
     _debounce?.cancel();
     super.dispose();
   }
 
-  // Fungsi untuk mengambil data laporan dengan parameter
-  Future<void> _fetchLaporan({bool loadMore = false}) async {
-    // Jika bukan load more, ini adalah request baru, reset state
-    if (!loadMore) {
-      setState(() {
-        _isLoading = true;
-        _currentPage = 1;
-        _laporanList = [];
-      });
-    } else {
-      setState(() { _isFetchingMore = true; });
+  Future<void> _refreshData({bool showLoading = true}) async {
+    if (showLoading && mounted) {
+      setState(() { _isLoading = true; });
     }
 
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    if (authProvider.token == null) return;
+    await _loadFromLocalDB();
+
+    if (showLoading && mounted) {
+      setState(() { _isLoading = false; });
+    }
 
     try {
-      final response = await _apiService.getLaporan(
-        authProvider.token!,
-        page: _currentPage,
-        searchQuery: _searchController.text,
-        statusId: _selectedStatusId == 0 ? null : _selectedStatusId,
-      );
-      
-      final List<dynamic> newLaporan = response['data'];
-      if (mounted) {
-        setState(() {
-          if (loadMore) {
-            _laporanList.addAll(newLaporan); // Tambahkan data baru ke list
-          } else {
-            _laporanList = newLaporan; // Ganti list dengan data baru
-          }
-          _lastPage = response['last_page']; // Update info halaman terakhir
-          if (loadMore) _currentPage++; // Naikkan halaman jika load more
-        });
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      if (authProvider.token != null) {
+        await _syncService.syncData(authProvider.token!);
+        await _loadFromLocalDB();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-          _isFetchingMore = false;
-        });
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Sync Error: ${e.toString()}")));
       }
     }
   }
-
+  
+  Future<void> _loadFromLocalDB() async {
+    final data = await _dbHelper.getLaporanList();
+    if (mounted) {
+      setState(() {
+        _laporanList = data.map((item) => Laporan.fromDbMap(item)).toList();
+      });
+    }
+  }
+  
   void _onSearchChanged() {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
-    _debounce = Timer(const Duration(milliseconds: 500), () {
-      _fetchLaporan();
+    _debounce = Timer(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        setState(() {
+          _searchQuery = _searchController.text;
+        });
+      }
     });
   }
 
-  // Fungsi untuk hapus laporan (tidak berubah)
-  Future<void> _deleteLaporan(int id) async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-
-    print('▶️ Memulai proses hapus untuk Laporan ID: $id');
-    
+  Future<void> _deleteLaporan(Laporan laporan) async {
     final bool? shouldDelete = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Konfirmasi Hapus'),
-        content: const Text('Apakah Anda yakin ingin menghapus laporan ini?'),
+        content: Text('Apakah Anda yakin ingin menghapus laporan "${laporan.judulLaporan}"?'),
         actions: [
           TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Batal')),
           TextButton(
@@ -142,51 +109,47 @@ class _ReportpageState extends State<Reportpage> {
       ),
     );
 
-    if (shouldDelete != true) {
-      print('Aksi hapus dibatalkan oleh pengguna.');
-      return;
-    }
-    
-    print('✅ Pengguna mengonfirmasi hapus. Mencoba memanggil API...');
-    
-    // Tampilkan loading indicator kecil
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Menghapus laporan...')));
+    if (shouldDelete != true) return;
 
     try {
-      await _apiService.deleteLaporan(id: id, token: authProvider.token!);
-      
-      print('🎉 SUKSES! API berhasil menghapus laporan.');
-      
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).hideCurrentSnackBar(); // Sembunyikan notifikasi "Menghapus..."
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Laporan berhasil dihapus'), backgroundColor: Colors.green),
-      );
-      
-      print('🔄 Memuat ulang daftar laporan...');
-      // Panggil _fetchLaporan untuk refresh data dari awal
-      _fetchLaporan();
-    } catch (e) {
-      print('❌ TERJADI ERROR saat menghapus!');
-      print('Pesan Error Lengkap: $e');
+      await _dbHelper.markLaporanForDeletion(laporan.id!);
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Laporan ditandai untuk dihapus.'), backgroundColor: Colors.orange),
+      );
+      
+      await _loadFromLocalDB();
+
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      if (authProvider.token != null) {
+        _syncService.syncData(authProvider.token!); 
+      }
+    } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()), backgroundColor: Colors.red));
     }
   }
+  
   @override
   Widget build(BuildContext context) {
+    final List<Laporan> filteredList = _laporanList.where((laporan) {
+      final titleMatches = laporan.judulLaporan.toLowerCase().contains(_searchQuery.toLowerCase());
+      final statusMatches = _selectedStatusId == null || _selectedStatusId == 0 
+                              ? true // Jika 'Semua Status' dipilih, loloskan semua
+                              : laporan.statusLaporanId == _selectedStatusId;
+
+      return titleMatches && statusMatches;
+    }).toList();
+
     return Scaffold(
       appBar: AppBar(title: const Text("Riwayat Laporan Saya")),
       body: Column(
         children: [
-          // --- UI UNTUK SEARCH DAN FILTER ---
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Row(
               children: [
-                // Search Field
                 Expanded(
                   child: TextField(
                     controller: _searchController,
@@ -199,7 +162,6 @@ class _ReportpageState extends State<Reportpage> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                // Filter Dropdown
                 DropdownButton<int>(
                   value: _selectedStatusId ?? 0,
                   items: _statusOptions.entries.map((entry) {
@@ -210,76 +172,43 @@ class _ReportpageState extends State<Reportpage> {
                   }).toList(),
                   onChanged: (value) {
                     setState(() { _selectedStatusId = value; });
-                    _fetchLaporan();
                   },
                 ),
               ],
             ),
           ),
-          // --- KONTEN UTAMA ---
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : RefreshIndicator(
-                    onRefresh: () => _fetchLaporan(),
-                    child: _laporanList.isEmpty
+                    onRefresh: () => _refreshData(),
+                    child: filteredList.isEmpty
                         ? const Center(child: Text('Tidak ada laporan ditemukan.'))
                         : ListView.builder(
-                            controller: _scrollController,
-                            itemCount: _laporanList.length + (_isFetchingMore ? 1 : 0),
+                            itemCount: filteredList.length,
                             itemBuilder: (context, index) {
-                              // Tampilkan loading di item terakhir jika sedang load more
-                              if (index == _laporanList.length) {
-                                return const Center(child: Padding(
-                                  padding: EdgeInsets.all(8.0),
-                                  child: CircularProgressIndicator(),
-                                ));
-                              }
-                              final laporan = _laporanList[index];
+                              final laporan = filteredList[index];
                               return Card(
                                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                 elevation: 3,
                                 child: ListTile(
-                                  leading: Icon(Icons.article_rounded, color: Colors.pink[300]),
-                                  title: Text(laporan['judul_laporan']),
-                                  subtitle: Text('Status: ${laporan['status_laporan']['nama_status']}'),
+                                  leading: Icon(
+                                      laporan.isSynced ? Icons.cloud_done_rounded : Icons.cloud_upload_rounded, 
+                                      color: laporan.isSynced ? Colors.green : Colors.orange),
+                                  title: Text(laporan.judulLaporan),
+                                  subtitle: Text('Status: ${laporan.statusNama}', maxLines: 1, overflow: TextOverflow.ellipsis),
                                   trailing: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      // --- TOMBOL EDIT ---
                                       IconButton(
                                         icon: const Icon(Icons.edit_outlined, color: Colors.blueGrey),
-                                        tooltip: 'Edit Laporan',
                                         onPressed: () {
-                                          // TODO: Modifikasi ReportFormPage agar bisa menerima data laporan
-                                          // Seperti yang kita lakukan pada ContactFormPage
-                                          print('Tombol Edit untuk ID ${laporan['id']} ditekan');
                                           Navigator.push(context, MaterialPageRoute(builder: (context) => ReportFormPage(laporan: laporan)));
                                         },
                                       ),
-                                      // --- TOMBOL DELETE ---
                                       IconButton(
                                         icon: const Icon(Icons.delete_outline, color: Colors.red),
-                                        tooltip: 'Hapus Laporan',
-                                        onPressed: () {
-                                          // Tampilkan dialog konfirmasi sebelum hapus
-                                          showDialog(
-                                            context: context,
-                                            builder: (ctx) => AlertDialog(
-                                              title: const Text('Konfirmasi Hapus'),
-                                              content: Text('Yakin ingin menghapus laporan "${laporan['judul_laporan']}"?'),
-                                              actions: [
-                                                TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Batal')),
-                                                TextButton(
-                                                  onPressed: (){
-                                                    Navigator.of(ctx).pop();
-                                                    _deleteLaporan(laporan['id']);
-                                                  }, 
-                                                  child: const Text('Hapus', style: TextStyle(color: Colors.red))),
-                                              ],
-                                            )
-                                          );
-                                        },
+                                        onPressed: () => _deleteLaporan(laporan),
                                       ),
                                     ],
                                   ),
@@ -295,7 +224,7 @@ class _ReportpageState extends State<Reportpage> {
         onPressed: () async {
           final result = await Navigator.push(context, MaterialPageRoute(builder: (context) => const ReportFormPage()));
           if (result == true || result == null) {
-            _fetchLaporan();
+            _refreshData(showLoading: false);
           }
         },
         child: const Icon(Icons.add),

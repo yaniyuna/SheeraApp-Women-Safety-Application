@@ -1,10 +1,7 @@
-// lib/screens/login_page.dart
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sheera/pages/login/register_page.dart';
 import 'package:sheera/providers/auth_provider.dart';
-
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -24,12 +21,12 @@ class _LoginPageState extends State<LoginPage> {
     FocusScope.of(context).unfocus();
 
     if (_formKey.currentState!.validate()) {
-      print('✅ Form valid. Memulai proses login...');
+      print('Form valid. Memulai proses login...');
       
       final email = _emailController.text;
       final password = _passwordController.text;
 
-      print('▶️ Data yang akan dikirim ke API:');
+      print('Data yang akan dikirim ke API:');
       print('   => Email: [$email]');
       print('   => Password: [$password]');
 
@@ -81,11 +78,10 @@ class _LoginPageState extends State<LoginPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Logo atau Judul Aplikasi
-                Icon(Icons.shield_moon, size: 80, color: Colors.pink[400]),
+                const Icon(Icons.woman),
                 const SizedBox(height: 16),
                 const Text(
-                  'Selamat Datang Kembali',
+                  'Selamat Datang di Sheera',
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
@@ -96,7 +92,6 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 40),
 
-                // Email Form Field
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
@@ -143,16 +138,16 @@ class _LoginPageState extends State<LoginPage> {
                 const SizedBox(height: 8),
 
                 // Lupa Password (untuk nanti)
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () {
-                      // TODO: Buat Halaman Lupa Password
-                    },
-                    child: const Text('Lupa Password?'),
-                  ),
-                ),
-                const SizedBox(height: 24),
+                // Align(
+                //   alignment: Alignment.centerRight,
+                //   child: TextButton(
+                //     onPressed: () {
+                //       // TODO: Buat Halaman Lupa Password
+                //     },
+                //     child: const Text('Lupa Password?'),
+                //   ),
+                // ),
+                // const SizedBox(height: 24),
                 
                 // Tombol Login
                 Consumer<AuthProvider>(

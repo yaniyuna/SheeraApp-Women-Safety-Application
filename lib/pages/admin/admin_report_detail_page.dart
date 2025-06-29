@@ -7,9 +7,7 @@ import 'package:sheera/providers/auth_provider.dart';
 import 'package:sheera/services/api_services.dart';
 
 class AdminReportDetailPage extends StatefulWidget {
-  // Halaman ini menerima satu objek laporan lengkap dari halaman daftar
   final Map<String, dynamic> laporan;
-
   const AdminReportDetailPage({super.key, required this.laporan});
 
   @override
@@ -32,7 +30,6 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
   @override
   void initState() {
     super.initState();
-    // Ambil status awal dari data laporan yang dikirim
     _selectedStatusId = widget.laporan['status_laporan_id'];
   }
 
@@ -52,7 +49,7 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Status berhasil diubah!'), backgroundColor: Colors.green),
       );
-      // Kirim sinyal 'true' saat kembali untuk memberitahu halaman daftar agar refresh
+      // Kirim sinyal 'true' saat kembali untuk memberitahu halaman daftar utk refresh
       Navigator.of(context).pop(true);
     } catch (e) {
       if (!mounted) return;
@@ -68,7 +65,8 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Parsing data agar lebih mudah dan aman digunakan
+
+    // Parsing data
     final judul = widget.laporan['judul_laporan'] ?? 'Tanpa Judul';
     final deskripsi = widget.laporan['deskripsi'] ?? 'Tidak ada deskripsi.';
     final pelapor = widget.laporan['user']?['nama_lengkap'] ?? 'Anonim';
@@ -85,7 +83,6 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // --- BAGIAN PETA LOKASI KEJADIAN ---
             SizedBox(
               height: 250,
               child: FlutterMap(
@@ -110,8 +107,6 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
                 ],
               ),
             ),
-
-            // --- BAGIAN DETAIL INFORMASI ---
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -122,15 +117,14 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
                   _buildInfoRow(Icons.person_outline, 'Dilaporkan oleh', pelapor),
                   _buildInfoRow(Icons.calendar_today_outlined, 'Waktu Kejadian', DateFormat('d MMMM yyyy, HH:mm').format(waktuKejadian)),
                   const Divider(height: 32),
-
-                  // --- BAGIAN BUKTI FOTO ---
+                  //utk foto
                   if (fotoUrl != null) ...[
                     const Text('Bukti Foto', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 12),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(12),
                       child: Image.network(
-                        'http://192.168.43.45:8000$fotoUrl',
+                        '${ApiServices.baseUrl}$fotoUrl',
                         fit: BoxFit.cover,
                         loadingBuilder: (context, child, progress) => progress == null ? child : const Center(child: CircularProgressIndicator()),
                         errorBuilder: (context, error, stack) => const Center(child: Icon(Icons.broken_image, size: 50, color: Colors.grey)),
@@ -138,14 +132,13 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
                     ),
                     const Divider(height: 32),
                   ],
-                  
-                  // --- BAGIAN DESKRIPSI ---
+          
                   const Text('Deskripsi Lengkap', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
                   Text(deskripsi, style: const TextStyle(fontSize: 16, height: 1.5)),
                   const Divider(height: 32),
 
-                  // --- BAGIAN AKSI ADMIN (UBAH STATUS) ---
+                  //ubh status
                   const Text('Tindakan Admin', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 16),
                   Container(

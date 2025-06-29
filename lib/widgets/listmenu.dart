@@ -4,7 +4,6 @@ import 'package:sheera/pages/user/subMenu/emergencydetail.dart';
 import 'package:sheera/pages/user/subMenu/fakecallpage.dart';
 import 'package:sheera/pages/user/subMenu/reportpage.dart';
 
-
 class ListMenu extends StatelessWidget {
   const ListMenu({super.key});
 
@@ -105,12 +104,11 @@ class MenuBox extends StatelessWidget {
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      // Gunakan ClipRRect agar konten yang di-scroll tidak "bocor" keluar dari sudut Card
+      // ClipRRect utk konten yang di-scroll tidak "bocor" keluar dari sudut Card
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
-        // SOLUSI UTAMA: Bungkus konten dengan SingleChildScrollView
         child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(), // Efek scroll yang lebih halus
+          physics: const BouncingScrollPhysics(), 
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
             child: Column(

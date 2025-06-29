@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sheera/pages/user/form/contact_form_page.dart';
@@ -52,13 +51,13 @@ class _EmergencypageState extends State<Emergencypage> {
     }
   }
 
-  // Fungsi untuk mengirim SMS (sesuai UI Anda)
+  // Fungsi untuk mengirim SMS
   Future<void> _sendSms(String phoneNumber) async {
     final Uri launchUri = Uri(
       scheme: 'sms',
       path: phoneNumber,
       queryParameters: <String, String>{
-        'body': 'Tolong! Saya dalam keadaan darurat. Lokasi saya saat ini: [Link Lokasi Anda Nanti]',
+        'body': 'Tolong! Saya dalam keadaan darurat.',
       },
     );
     await launchUrl(launchUri);
@@ -67,7 +66,6 @@ class _EmergencypageState extends State<Emergencypage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Kita gunakan body saja karena AppBar dan BottomNav sudah ada di MainPage
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _kontakList.isEmpty
@@ -113,13 +111,12 @@ class _EmergencypageState extends State<Emergencypage> {
     );
   }
 
-    // Tampilan jika kontak darurat ada (mirip screenshot Anda)
+    // Tampilan jika kontak darurat ada
     Widget _buildContactView() {
     // Ambil kontak pertama sebagai kontak utama
     final primaryContact = _kontakList[0];
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-    // --- FUNGSI BARU UNTUK HAPUS KONTAK ---
     Future<void> _deleteContact() async {
       // Tampilkan dialog konfirmasi
       final bool? shouldDelete = await showDialog<bool>(
@@ -234,7 +231,6 @@ class _EmergencypageState extends State<Emergencypage> {
               OutlinedButton.icon(
                 icon: const Icon(Icons.edit_outlined),
                 label: const Text('Edit'),
-                // Di sinilah Anda meletakkan kode Anda
                 onPressed: () async {
                   final result = await Navigator.push(
                     context,

@@ -1,12 +1,14 @@
-
-
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+//import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sheera/services/api_services.dart';
 
+//enum AuthStatus { Uninitialized, Authenticated, Authenticating, Unauthenticated }
 
 class AuthProvider with ChangeNotifier {
+  // AuthStatus _authStatus = AuthStatus.Uninitialized;
+  // AuthStatus get authStatus => _authStatus;
   final ApiServices _apiServices= ApiServices();
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
@@ -15,7 +17,6 @@ class AuthProvider with ChangeNotifier {
   bool _isAuthenticated = false;
   bool _isLoading = false;
 
-  // Getters untuk mengakses state dari luar
   String? get token => _token;
   Map<String, dynamic>? get user => _user;
   bool get isAuthenticated => _isAuthenticated;
@@ -108,4 +109,6 @@ class AuthProvider with ChangeNotifier {
     await _storage.deleteAll();
     notifyListeners();
   }
+
+  
 }

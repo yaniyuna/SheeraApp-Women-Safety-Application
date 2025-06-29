@@ -99,8 +99,7 @@ class _FakecallpageState extends State<Fakecallpage> {
                     style: TextStyle(color: Colors.grey),
                   ),
                   const SizedBox(height: 40),
-
-                  // --- UI DIGANTI MENJADI DROPDOWN ---
+                  
                   if (_skenarioList.isNotEmpty)
                     DropdownButtonFormField<Map<String, dynamic>>(
                       value: _selectedSkenario,

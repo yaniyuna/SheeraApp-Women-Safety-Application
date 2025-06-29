@@ -5,11 +5,12 @@ import 'package:image_picker/image_picker.dart'; // Untuk gambar
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:sheera/providers/auth_provider.dart';
-import 'package:sheera/services/api_services.dart'; // Untuk format tanggal
+//import 'package:sheera/services/api_services.dart'; // Untuk format tanggal
+import 'package:sheera/models/laporan.dart';
+import 'package:sheera/helpers/dbhelper.dart';
 
 class ReportFormPage extends StatefulWidget {
-  final Map<String, dynamic>? laporan;
-  //const ReportFormPage({super.key});
+  final Laporan? laporan;
   const ReportFormPage({super.key, this.laporan});
 
   @override
@@ -24,6 +25,8 @@ class _ReportFormPageState extends State<ReportFormPage> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
 
+  final _dbHelper = DatabaseHelper();
+
   // Variabel untuk menyimpan data interaktif
   DateTime? _selectedDateTime;
   Position? _currentPosition;
@@ -36,17 +39,33 @@ class _ReportFormPageState extends State<ReportFormPage> {
   @override
   void initState() {
     super.initState();
-    // 4. Jika dalam mode edit, isi form dengan data yang sudah ada
+
+    // Cek apakah ini mode edit
     if (_isEditing) {
-      _titleController.text = widget.laporan!['judul_laporan'];
-      _descriptionController.text = widget.laporan!['deskripsi'];
-      // Konversi string tanggal dari API menjadi objek DateTime
-      _selectedDateTime = DateTime.parse(widget.laporan!['waktu_kejadian']);
-      
+      print('--- Form dalam mode EDIT untuk Laporan ID: ${widget.laporan!.id} ---');
+
+      _titleController.text = widget.laporan!.judulLaporan;
+      _descriptionController.text = widget.laporan!.deskripsi;
+
+      _selectedDateTime = widget.laporan!.waktuKejadian;
+      _currentPosition = Position(
+        latitude: widget.laporan!.latitude,
+        longitude: widget.laporan!.longitude,
+        timestamp: widget.laporan!.waktuKejadian,
+        accuracy: 0.0,
+        altitude: 0.0,
+        heading: 0.0,
+        speed: 0.0,
+        speedAccuracy: 0.0,
+        altitudeAccuracy: 0.0,
+        headingAccuracy: 0.0
+      );
+
+      if (widget.laporan!.localImagePath != null && widget.laporan!.localImagePath!.isNotEmpty) {
+        _pickedImage = File(widget.laporan!.localImagePath!);
+      }
     }
   }
-
-  // --- LOGIKA UNTUK FITUR INTERAKTIF ---
 
   // Fungsi untuk menampilkan pemilih tanggal dan waktu
   Future<void> _selectDateTime() async {
@@ -155,17 +174,15 @@ class _ReportFormPageState extends State<ReportFormPage> {
     );
   }
 
-  // Ganti nama method agar lebih jelas, dan perbarui logikanya
-  Future<void> _submitReport() async {
+  Future<void> _saveReportToLocalDb() async {
     if (!_formKey.currentState!.validate()) return;
     
-    // Cek data interaktif
     if (_selectedDateTime == null) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Mohon pilih waktu kejadian.')));
       return;
     }
     
-    // Untuk lokasi, saat edit, kita mungkin tidak mewajibkan ambil lokasi baru
+    // Untuk lokasi, saat create wajib, saat edit tidak
     if (!_isEditing && _currentPosition == null) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Mohon ambil lokasi kejadian.')));
       return;
@@ -174,43 +191,57 @@ class _ReportFormPageState extends State<ReportFormPage> {
     setState(() { _isLoading = true; });
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final apiService = ApiServices();
-    String successMessage = '';
-    
+
     try {
       if (_isEditing) {
-        // --- LOGIKA UNTUK UPDATE ---
-        await apiService.updateLaporan(
-          id: widget.laporan!['id'],
-          judul: _titleController.text,
+        final updatedLaporan = Laporan(
+          id: widget.laporan!.id,
+          serverId: widget.laporan!.serverId,
+          judulLaporan: _titleController.text,
           deskripsi: _descriptionController.text,
           waktuKejadian: _selectedDateTime!,
-          token: authProvider.token!,
+          localImagePath: _pickedImage?.path, // Simpan path gambar yang mungkin baru
+          actionStatus: 'UPDATE',
+          isSynced: false,
+          latitude: widget.laporan!.latitude,
+          longitude: widget.laporan!.longitude,
+          statusLaporanId: widget.laporan!.statusLaporanId,
+          statusNama: widget.laporan!.statusNama,
+          //userId: authProvider.user?.id ?? 0,
+          createdAt: widget.laporan!.createdAt,
+          updatedAt: DateTime.now(),
         );
-        successMessage = 'Laporan berhasil diperbarui!';
-      } else {
-        // --- LOGIKA UNTUK CREATE (YANG SUDAH ADA) ---
-        await apiService.createLaporan(
-          judul: _titleController.text,
-          deskripsi: _descriptionController.text,
-          waktuKejadian: _selectedDateTime!,
-          posisi: _currentPosition!,
-          gambarBukti: _pickedImage,
-          token: authProvider.token!,
-        );
-        successMessage = 'Laporan berhasil dikirim!';
-      }
+        await _dbHelper.upsertLaporan(updatedLaporan.toDbMap());
 
+      } else {
+        final newLaporan = Laporan(
+          judulLaporan: _titleController.text,
+          deskripsi: _descriptionController.text,
+          waktuKejadian: _selectedDateTime!,
+          latitude: _currentPosition!.latitude,
+          longitude: _currentPosition!.longitude,
+          localImagePath: _pickedImage?.path, // Simpan path gambar ke DB
+          actionStatus: 'CREATE',
+          isSynced: false,
+          statusLaporanId: 1, // Status default 'Baru'
+          statusNama: 'Baru',
+          //userId: authProvider.user?.id ?? 0,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+        await _dbHelper.upsertLaporan(newLaporan.toDbMap());
+      }
+      
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(successMessage), backgroundColor: Colors.green),
+        SnackBar(content: Text('Laporan disimpan secara lokal!'), backgroundColor: Colors.blue),
       );
-      Navigator.of(context).pop(true); // Kirim 'true' untuk sinyal refresh
+      Navigator.of(context).pop(true); // Kirim sinyal 'true' untuk refresh
 
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+        SnackBar(content: Text('Gagal menyimpan ke database lokal: $e'), backgroundColor: Colors.red),
       );
     } finally {
       if (mounted) {
@@ -235,7 +266,6 @@ class _ReportFormPageState extends State<ReportFormPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // --- Input Judul ---
                 TextFormField(
                   controller: _titleController,
                   decoration: const InputDecoration(
@@ -252,8 +282,6 @@ class _ReportFormPageState extends State<ReportFormPage> {
                   },
                 ),
                 const SizedBox(height: 16),
-
-                // --- Input Deskripsi ---
                 TextFormField(
                   controller: _descriptionController,
                   maxLines: 5,
@@ -271,8 +299,6 @@ class _ReportFormPageState extends State<ReportFormPage> {
                   },
                 ),
                 const SizedBox(height: 24),
-                
-                // --- Pemilih Tanggal & Waktu ---
                 Card(
                   child: ListTile(
                     leading: const Icon(Icons.calendar_today, color: Colors.pink),
@@ -286,8 +312,6 @@ class _ReportFormPageState extends State<ReportFormPage> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
-                // --- Pengambil Lokasi ---
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(8.0),
@@ -314,8 +338,6 @@ class _ReportFormPageState extends State<ReportFormPage> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
-                // --- Pengunggah Bukti ---
                 GestureDetector(
                   onTap: _pickImage,
                   child: Container(
@@ -344,13 +366,12 @@ class _ReportFormPageState extends State<ReportFormPage> {
                 // --- Tombol Submit ---
                 ElevatedButton(
                   // Panggil method _submitReport yang baru
-                  onPressed: _isLoading ? null : _submitReport,
+                  onPressed: _isLoading ? null : _saveReportToLocalDb,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.pink,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     textStyle: const TextStyle(fontSize: 18),
                   ),
-                  // Teks tombol dinamis
                   child: _isLoading 
                       ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white))
                       : Text(_isEditing ? 'Update Laporan' : 'Kirim Laporan'),

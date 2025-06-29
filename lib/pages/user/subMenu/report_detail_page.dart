@@ -4,14 +4,12 @@ import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 
 class ReportDetailPage extends StatelessWidget {
-  // Halaman ini menerima satu objek laporan lengkap
   final Map<String, dynamic> laporan;
-
   const ReportDetailPage({super.key, required this.laporan});
 
   @override
   Widget build(BuildContext context) {
-    // Parsing data agar lebih mudah digunakan
+    // Parsing data
     final judul = laporan['judul_laporan'] ?? 'Tanpa Judul';
     final deskripsi = laporan['deskripsi'] ?? 'Tidak ada deskripsi.';
     final status = laporan['status_laporan']?['nama_status'] ?? 'N/A';
@@ -31,7 +29,6 @@ class ReportDetailPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // --- BAGIAN PETA ---
             SizedBox(
               height: 250,
               child: FlutterMap(
@@ -56,8 +53,6 @@ class ReportDetailPage extends StatelessWidget {
                 ],
               ),
             ),
-
-            // --- BAGIAN DETAIL TEKS ---
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -71,15 +66,13 @@ class ReportDetailPage extends StatelessWidget {
                   const Text('Deskripsi', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
                   Text(deskripsi, style: const TextStyle(fontSize: 16, height: 1.5)),
-                  
-                  // --- BAGIAN BUKTI FOTO ---
+
                   if (fotoUrl != null) ...[
                     const Divider(height: 32),
                     const Text('Bukti Foto', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 16),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(12),
-                      // Ganti '10.23.3.58:8000' dengan IP Anda jika berbeda
                       child: Image.network(
                         'http://192.168.43.45:8000$fotoUrl', 
                         fit: BoxFit.cover,

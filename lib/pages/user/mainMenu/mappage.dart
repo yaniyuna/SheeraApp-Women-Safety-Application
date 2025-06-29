@@ -1,7 +1,7 @@
-import 'dart:async'; // <-- Import untuk StreamSubscription
+import 'dart:async'; 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:geolocator/geolocator.dart'; // <-- Pastikan package ini ada
+import 'package:geolocator/geolocator.dart'; 
 import 'package:latlong2/latlong.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:share_plus/share_plus.dart';
@@ -31,8 +31,6 @@ class _MappageState extends State<Mappage> {
 
   @override
   void dispose() {
-    // SANGAT PENTING: Hentikan langganan saat halaman ditutup
-    // untuk mencegah kebocoran memori dan menghemat baterai.
     _positionStreamSubscription?.cancel();
     super.dispose();
   }
@@ -45,7 +43,7 @@ class _MappageState extends State<Mappage> {
       distanceFilter: 10, // Update jika lokasi berubah minimal 10 meter
     );
 
-    // Mulai "berlangganan" data posisi dari Geolocator
+
     _positionStreamSubscription = Geolocator.getPositionStream(locationSettings: locationSettings)
         .listen((Position? position) {
       if (position != null) {
@@ -176,25 +174,21 @@ class _MappageState extends State<Mappage> {
         title: const Text('Peta Keamanan (Live)'),
       ),
       body: FlutterMap(
-        // Hubungkan map controller kita ke widget FlutterMap
         mapController: _mapController,
         options: MapOptions(
-          initialCenter: LatLng(-6.2088, 106.8456), // Posisi awal Jakarta
+          initialCenter: LatLng(-6.2088, 106.8456), // Posisi awal Jkt
           initialZoom: 13.0,
         ),
         children: [
           // Lapisan Peta Dasar
           TileLayer(
             urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-            userAgentPackageName: 'com.example.sheera', // Ganti dengan package Anda
+            userAgentPackageName: 'com.example.sheera',
           ),
 
           // Lapisan Penanda (Markers)
           MarkerLayer(
             markers: [
-              // Tambahkan marker lain jika perlu, misal titik aman, dll.
-
-              // Marker untuk lokasi pengguna saat ini (dinamis)
               // Marker ini hanya akan muncul jika _currentPosition tidak null
               if (_currentPosition != null)
                 Marker(

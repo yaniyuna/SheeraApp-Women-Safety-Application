@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sheera/providers/auth_provider.dart';
 import 'package:sheera/screens/auth_wrapper.dart'; 
-
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(

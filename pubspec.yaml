@@ -54,6 +54,11 @@ dependencies:
   share_plus: ^11.0.0
   infinite_scroll_pagination: ^5.1.0
   flutter_native_splash: ^2.4.6
+  connectivity_plus: ^6.0.3
+  http: ^1.4.0
+  flutter_launcher_icons: ^0.14.4
+  shared_preferences: ^2.5.3
+
 
 flutter_native_splash:
   # Warna latar belakang splash screen
@@ -93,7 +98,12 @@ flutter:
   - assets/appimages/han.png
   - assets/appimages/bg.jpg
   
-
+flutter_launcher_icons:
+  android: "launcher_icon"   # true atau nama file ikon untuk android
+  ios: true                  # true untuk mengaktifkan penggantian ikon iOS
+  image_path: "assets/appimages/flower.png" 
+  min_sdk_android: 21
+  
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg

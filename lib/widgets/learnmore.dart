@@ -12,16 +12,16 @@ class _LearnmoreState extends State<Learnmore> {
 
   final List<Map<String, String>> newsList = [
     {
-      "title": "Edukasi 1",
-      "image": "https://i.pinimg.com/736x/d5/81/e0/d581e0b1d350a08b17ac7b057514dc7d.jpg"
+      "title": "Keselamatan ketika di tempat asing",
+      "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTQ8UVXNwEmoeXGTxPbDHFX-n0gSi6VkonWxg&s"
     },
     {
-      "title": "Edukasi 2",
-      "image": "https://i.pinimg.com/736x/b5/e9/19/b5e919b71c036b6a1775c7dd94964a42.jpg"
+      "title": "10 Tips Keselamatan Taksi untuk Wanita",
+      "image": "https://i0.wp.com/thespicytravelgirl.com/wp-content/uploads/2020/06/lighted-taxi-signage-1448598-scaled.jpg?resize=840%2C525&ssl=1"
     },
     {
-      "title": "Edukasi 3",
-      "image": "https://i.pinimg.com/736x/8e/2c/52/8e2c5284371de3717e5decbd8d10a530.jpg"
+      "title": "Tingkatkan waspada saat bepergian sendirian",
+      "image": "https://www.abroadwithash.com/wp-content/uploads/2022/03/Hotel-Safety-Tips-for-Solo-Female-Travelers.png"
     },
   ];
 

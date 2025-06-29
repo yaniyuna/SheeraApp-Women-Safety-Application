@@ -1,5 +1,3 @@
-// lib/screens/fake_call/active_call_screen.dart
-
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
@@ -41,7 +39,6 @@ class _ActiveCallScreenState extends State<ActiveCallScreen> {
   // Fungsi untuk memutar audio percakapan dari URL
   Future<void> _playConversationAudio() async {
     try {
-      // Ganti '10.23.3.58:8000' dengan IP API Anda
       String fullAudioUrl = 'http://192.168.43.45:8000${widget.audioUrl}';
       print('Memutar audio dari: $fullAudioUrl');
       await _audioPlayer.setUrl(fullAudioUrl);
