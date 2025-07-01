@@ -25,7 +25,7 @@ class _ReportFormPageState extends State<ReportFormPage> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
 
-  final _dbHelper = DatabaseHelper();
+  final _dbHelper = DatabaseHelper.instance;
 
   // Variabel untuk menyimpan data interaktif
   DateTime? _selectedDateTime;
@@ -322,7 +322,7 @@ class _ReportFormPageState extends State<ReportFormPage> {
                           icon: const Icon(Icons.my_location), 
                           label: const Text('Gunakan Lokasi Saat Ini'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blueGrey,
+                            backgroundColor: const Color.fromARGB(255, 227, 172, 190),
                             minimumSize: const Size(double.infinity, 40),
                           ),
                         ),
@@ -368,7 +368,7 @@ class _ReportFormPageState extends State<ReportFormPage> {
                   // Panggil method _submitReport yang baru
                   onPressed: _isLoading ? null : _saveReportToLocalDb,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.pink,
+                    backgroundColor: const Color.fromARGB(255, 227, 172, 190),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     textStyle: const TextStyle(fontSize: 18),
                   ),

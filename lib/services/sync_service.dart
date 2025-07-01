@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:sheera/helpers/dbhelper.dart';
 import 'package:sheera/models/laporan.dart';
@@ -6,7 +7,7 @@ import 'package:geolocator/geolocator.dart';
 
 class SyncService {
   final ApiServices _apiService = ApiServices();
-  final DatabaseHelper _dbHelper = DatabaseHelper();
+  final DatabaseHelper _dbHelper = DatabaseHelper.instance;
 
   Future<void> syncData(String token) async {
     final connectivityResult = await (Connectivity().checkConnectivity());
@@ -37,6 +38,16 @@ class SyncService {
         if (laporan.actionStatus == 'CREATE') {
           print("Push CREATE untuk: ${laporan.judulLaporan}");
 
+          File? imageFile;
+          if (laporanMap['local_image_path'] != null && laporanMap['local_image_path'].isNotEmpty) {
+            imageFile = File(laporanMap['local_image_path']);
+            // Periksa apakah file tersebut benar-benar masih ada di perangkat
+            if (!await imageFile.exists()) {
+              print("Peringatan: File gambar di ${laporanMap['local_image_path']} tidak ditemukan. Mengirim tanpa gambar.");
+              imageFile = null;
+            }
+          }
+
           final Position posisiLaporan = Position(
             latitude: laporan.latitude,
             longitude: laporan.longitude,
@@ -56,6 +67,7 @@ class SyncService {
             deskripsi: laporan.deskripsi,
             waktuKejadian: laporan.waktuKejadian,
             posisi: posisiLaporan,
+            gambarBukti: imageFile,
             // latitude: laporan.latitude, 
             // longitude: laporan.longitude, 
             token: token,

@@ -15,7 +15,7 @@ class Reportpage extends StatefulWidget {
 }
 
 class _ReportpageState extends State<Reportpage> {
-  final DatabaseHelper _dbHelper = DatabaseHelper();
+  final DatabaseHelper _dbHelper = DatabaseHelper.instance;
   final SyncService _syncService = SyncService();
 
   List<Laporan> _laporanList = [];

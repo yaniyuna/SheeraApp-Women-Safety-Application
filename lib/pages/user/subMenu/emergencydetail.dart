@@ -9,7 +9,7 @@ class Emergencydetail extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text("EMERGENCY DETAILS"),
-        backgroundColor: Colors.purple[200],
+        backgroundColor: Colors.pink,
       ),
       body: ListView(
         padding: const EdgeInsets.all(16.0),

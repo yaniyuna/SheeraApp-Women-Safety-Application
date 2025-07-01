@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 //import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sheera/helpers/dbhelper.dart';
 import 'package:sheera/services/api_services.dart';
 
 //enum AuthStatus { Uninitialized, Authenticated, Authenticating, Unauthenticated }
@@ -27,6 +28,17 @@ class AuthProvider with ChangeNotifier {
     _tryAutoLogin();
   }
 
+  // Future<void> _tryAutoLogin() async {
+  //   final token = await _storage.read(key: 'auth_token');
+  //   final userString = await _storage.read(key: 'user_data');
+  //   if (token != null && userString != null) {
+  //     _token = token;
+  //     _user = jsonDecode(userString);
+  //     _isAuthenticated = true;
+  //     notifyListeners();
+  //   }
+  // }
+
   Future<void> _tryAutoLogin() async {
     final token = await _storage.read(key: 'auth_token');
     final userString = await _storage.read(key: 'user_data');
@@ -34,6 +46,11 @@ class AuthProvider with ChangeNotifier {
       _token = token;
       _user = jsonDecode(userString);
       _isAuthenticated = true;
+
+      // PENTING: Inisialisasi DB juga saat auto-login
+      if (_user != null && _user!['id'] != null) {
+        await DatabaseHelper.instance.initDbForUser(_user!['id']);
+      }
       notifyListeners();
     }
   }
@@ -47,7 +64,11 @@ class AuthProvider with ChangeNotifier {
       _user = response['user'];
       _isAuthenticated = true;
 
-      // Simpan token dan data user ke secure storage
+      // PENTING: Inisialisasi database untuk user yang baru saja login
+      if (_user != null && _user!['id'] != null) {
+        await DatabaseHelper.instance.initDbForUser(_user!['id']);
+      }
+
       await _storage.write(key: 'auth_token', value: _token);
       await _storage.write(key: 'user_data', value: jsonEncode(_user));
 
@@ -57,7 +78,7 @@ class AuthProvider with ChangeNotifier {
     } catch (e) {
       _isLoading = false;
       notifyListeners();
-      rethrow; 
+      rethrow;
     }
   }
 
@@ -97,7 +118,22 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  // Future<void> logout() async {
+  //   if (_token != null) {
+  //     await _apiServices.logout(_token!);
+  //   }
+  //   _token = null;
+  //   _user = null;
+  //   _isAuthenticated = false;
+
+  //   // Hapus dari storage
+  //   await _storage.deleteAll();
+  //   notifyListeners();
+  // }
   Future<void> logout() async {
+    // Tutup database user saat ini sebelum menghapus token
+    await DatabaseHelper.instance.closeDb();
+
     if (_token != null) {
       await _apiServices.logout(_token!);
     }
@@ -105,7 +141,6 @@ class AuthProvider with ChangeNotifier {
     _user = null;
     _isAuthenticated = false;
 
-    // Hapus dari storage
     await _storage.deleteAll();
     notifyListeners();
   }

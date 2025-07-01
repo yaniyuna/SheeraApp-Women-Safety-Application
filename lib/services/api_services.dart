@@ -189,7 +189,7 @@ class ApiServices {
     try {
       final response = await _dio.post(
         '/laporan',
-        data: formData,
+        data: formData, //send a hole formdata
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
       return response.data['data'];

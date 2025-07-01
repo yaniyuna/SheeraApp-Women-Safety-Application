@@ -2,28 +2,63 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
 class DatabaseHelper {
-  static final DatabaseHelper _instance = DatabaseHelper._internal();
-  factory DatabaseHelper() => _instance;
+  // --- POLA SINGLETON YANG AMAN (LAZY INITIALIZATION) ---
+  // Ini memastikan hanya ada satu instance DatabaseHelper di seluruh aplikasi.
+
+  // 1. Instance dibuat private dan nullable.
+  static DatabaseHelper? _instance;
+
+  // 2. Constructor dibuat private agar tidak bisa dipanggil dari luar dengan DatabaseHelper().
   DatabaseHelper._internal();
 
-  static Database? _database;
+  // 3. Ini adalah satu-satunya "pintu masuk" resmi untuk mendapatkan instance.
+  static DatabaseHelper get instance {
+    // Jika instance belum pernah ada, buat sekarang. Jika sudah ada, kembalikan yang lama.
+    _instance ??= DatabaseHelper._internal();
+    return _instance!;
+  }
+  // ----------------------------------------------------------------
 
+  // Variabel database TIDAK LAGI STATIS.
+  // Setiap instance helper sekarang akan memegang koneksi database-nya sendiri.
+  Database? _database;
+
+  // Getter untuk mendapatkan koneksi database yang sudah aktif.
   Future<Database> get database async {
-    if (_database != null) return _database!;
-    _database = await _initDatabase();
+    if (_database == null || !_database!.isOpen) {
+      // Ini adalah pengaman jika ada yang mencoba mengakses DB sebelum login.
+      throw Exception("Database belum diinisialisasi. Panggil initDbForUser() setelah login.");
+    }
     return _database!;
   }
 
-  Future<Database> _initDatabase() async {
-    String path = join(await getDatabasesPath(), 'sheera_app.db');
-    return await openDatabase(
+  // FUNGSI KUNCI: Inisialisasi database untuk user spesifik.
+  // Fungsi ini akan dipanggil oleh AuthProvider setelah login berhasil.
+  Future<void> initDbForUser(int userId) async {
+    // Jika sudah ada database terbuka (misal saat ganti akun), tutup dulu.
+    if (_database != null && _database!.isOpen) {
+      await _database!.close();
+    }
+    // Buat nama file database yang unik berdasarkan User ID.
+    String path = join(await getDatabasesPath(), 'sheera_user_$userId.db');
+    _database = await openDatabase(
       path,
       version: 1,
       onCreate: _onCreate,
     );
+    print("Database untuk user ID $userId telah dibuka di path: $path");
   }
 
-  // Membuat tabel saat database pertama kali dibuat
+  // FUNGSI KUNCI: Menutup database saat logout.
+  Future<void> closeDb() async {
+    if (_database != null && _database!.isOpen) {
+      await _database!.close();
+      _database = null; // Set ke null agar siap untuk user berikutnya.
+      print("Database telah ditutup.");
+    }
+  }
+
+  // Membuat skema tabel saat database pertama kali dibuat.
   Future<void> _onCreate(Database db, int version) async {
     await db.execute('''
       CREATE TABLE laporan (
@@ -47,53 +82,18 @@ class DatabaseHelper {
     
   }
 
-  // --- Fungsi CRUD untuk Laporan Lokal ---
+  // --- Fungsi CRUD Lokal untuk Laporan ---
 
-  // Menambah atau mengedit laporan di lokal
+  // Fungsi pintar: update jika server_id sudah ada, insert jika belum.
   Future<int> upsertLaporan(Map<String, dynamic> laporan) async {
     final db = await database;
     if (laporan['server_id'] != null) {
       List<Map> maps = await db.query('laporan', where: 'server_id = ?', whereArgs: [laporan['server_id']]);
       if (maps.isNotEmpty) {
-        // Jika ada, update data tersebut
         return await db.update('laporan', laporan, where: 'server_id = ?', whereArgs: [laporan['server_id']]);
       }
     }
-    // Jika tidak ada atau server_id null, insert data baru
     return await db.insert('laporan', laporan, conflictAlgorithm: ConflictAlgorithm.replace);
-  }
-  
-  // Mengambil semua laporan dari database lokal
-  Future<List<Map<String, dynamic>>> getLaporanList() async {
-    final db = await database;
-    // Ambil hanya laporan yang tidak ditandai untuk dihapus
-    return await db.query('laporan', where: 'action_status IS NULL OR action_status != ?', whereArgs: ['DELETE']);
-  }
-
-  // Mengambil laporan yang belum disinkronisasi
-  Future<List<Map<String, dynamic>>> getUnsyncedLaporan() async {
-    final db = await database;
-    return await db.query('laporan', where: 'is_synced = ?', whereArgs: [0]);
-  }
-
-  Future<void> markLaporanForDeletion(int localId) async {
-    final db = await database;
-    await db.update(
-      'laporan',
-      {
-        'action_status': 'DELETE',
-        'is_synced': 0, // Tandai sebagai belum sinkron agar di-push oleh SyncService
-      },
-      where: 'id = ?',
-      whereArgs: [localId],
-    );
-  }
-  
-
-  // Menghapus semua data laporan (untuk proses full sync)
-  Future<void> clearLaporanTable() async {
-    final db = await database;
-    await db.delete('laporan');
   }
 
   Future<void> updateLocalLaporanAfterCreate(int localId, int serverId) async {
@@ -109,16 +109,32 @@ class DatabaseHelper {
       whereArgs: [localId],
     );
   }
-
-  // Fungsi baru untuk menandai item sebagai sudah sinkron
-  Future<void> markAsSynced(int localId) async {
+  
+  // Mengambil daftar laporan untuk ditampilkan di UI.
+  Future<List<Map<String, dynamic>>> getLaporanList() async {
     final db = await database;
-    await db.update(
-        'laporan', {'is_synced': 1, 'action_status': null},
-        where: 'id = ?', whereArgs: [localId]);
+    return await db.query('laporan', where: 'action_status IS NULL OR action_status != ?', whereArgs: ['DELETE'], orderBy: 'id DESC');
+  }
+  
+  // Mengambil laporan yang belum disinkronisasi untuk di-push ke server.
+  Future<List<Map<String, dynamic>>> getUnsyncedLaporan() async {
+    final db = await database;
+    return await db.query('laporan', where: 'is_synced = ?', whereArgs: [0]);
   }
 
-  // Fungsi baru untuk menghapus data secara permanen dari lokal
+  // Menandai item untuk dihapus saat sinkronisasi berikutnya.
+  Future<void> markLaporanForDeletion(int localId) async {
+    final db = await database;
+    await db.update('laporan', {'action_status': 'DELETE', 'is_synced': 0}, where: 'id = ?', whereArgs: [localId]);
+  }
+
+  // Menandai item sebagai sudah sinkron setelah berhasil PUSH UPDATE.
+  Future<void> markAsSynced(int localId) async {
+    final db = await database;
+    await db.update('laporan', {'is_synced': 1, 'action_status': null}, where: 'id = ?', whereArgs: [localId]);
+  }
+
+  // Menghapus record secara permanen dari DB lokal (setelah PUSH DELETE berhasil).
   Future<void> deleteLaporanPermanently(int localId) async {
     final db = await database;
     await db.delete('laporan', where: 'id = ?', whereArgs: [localId]);
